@@ -445,7 +445,7 @@ public class ConnectionFactoryImpl extends ConnectionFactory {
 
     //#if mvn.project.property.postgresql.jdbc.spec >= "JDBC4.2"
     /* SCRAM authentication state, if used */
-    org.postgresql.jre8.sasl.ScramAuthenticator scramAuthenticator = null;
+    //org.postgresql.jre8.sasl.ScramAuthenticator scramAuthenticator = null;
     //#endif
 
     try {
@@ -615,26 +615,26 @@ public class ConnectionFactoryImpl extends ConnectionFactory {
                 LOGGER.log(Level.FINEST, " <=BE AuthenticationSASL");
 
                 //#if mvn.project.property.postgresql.jdbc.spec >= "JDBC4.2"
-                scramAuthenticator = new org.postgresql.jre8.sasl.ScramAuthenticator(user, password, pgStream);
-                scramAuthenticator.processServerMechanismsAndInit();
-                scramAuthenticator.sendScramClientFirstMessage();
+//                scramAuthenticator = new org.postgresql.jre8.sasl.ScramAuthenticator(user, password, pgStream);
+//                scramAuthenticator.processServerMechanismsAndInit();
+//                scramAuthenticator.sendScramClientFirstMessage();
                 //#else
-                if (true) {
-                  throw new PSQLException(GT.tr(
-                          "SCRAM authentication is not supported by this driver. You need JDK >= 8 and pgjdbc >= 42.2.0 (not \".jre\" vesions)",
-                          areq), PSQLState.CONNECTION_REJECTED);
-                }
-                //#endif
-                break;
+//                if (true) {
+//                  throw new PSQLException(GT.tr(
+//                          "SCRAM authentication is not supported by this driver. You need JDK >= 8 and pgjdbc >= 42.2.0 (not \".jre\" vesions)",
+//                          areq), PSQLState.CONNECTION_REJECTED);
+//                }
+//                //#endif
+                throw new UnsupportedOperationException("SASL авторизация не поддерживается в данной сборке JDBC");
 
               //#if mvn.project.property.postgresql.jdbc.spec >= "JDBC4.2"
               case AUTH_REQ_SASL_CONTINUE:
-                scramAuthenticator.processServerFirstMessage(l_msgLen - 4 - 4);
-                break;
+                throw new UnsupportedOperationException("SASL авторизация не поддерживается в данной сборке JDBC");
+                //scramAuthenticator.processServerFirstMessage(l_msgLen - 4 - 4);
 
               case AUTH_REQ_SASL_FINAL:
-                scramAuthenticator.verifyServerSignature(l_msgLen - 4 - 4);
-                break;
+                throw new UnsupportedOperationException("SASL авторизация не поддерживается в данной сборке JDBC");
+                //scramAuthenticator.verifyServerSignature(l_msgLen - 4 - 4);
               //#endif
 
               case AUTH_REQ_OK:
