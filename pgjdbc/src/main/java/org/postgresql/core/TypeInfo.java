@@ -5,6 +5,7 @@
 
 package org.postgresql.core;
 
+import org.postgresql.core.c60.JdbcConverter;
 import org.postgresql.util.PGobject;
 
 import java.sql.SQLException;
@@ -15,6 +16,11 @@ public interface TypeInfo {
       Integer arrayOid);
 
   void addDataType(String type, Class<? extends PGobject> klass) throws SQLException;
+
+  /**
+   * Добавить тип данных с указанием конвертера
+   **/
+  void addDataType(JdbcConverter<?> conv);
 
   /**
    * Look up the SQL typecode for a given type oid.
@@ -83,7 +89,7 @@ public interface TypeInfo {
 
   Iterator<String> getPGTypeNamesWithSQLTypes();
 
-  Class<? extends PGobject> getPGobject(String type);
+  JdbcConverter<?> getPGobject(String type);
 
   String getJavaClass(int oid) throws SQLException;
 

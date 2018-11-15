@@ -6,6 +6,7 @@
 package org.postgresql;
 
 import org.postgresql.copy.CopyManager;
+import org.postgresql.core.c60.JdbcConverter;
 import org.postgresql.fastpath.Fastpath;
 import org.postgresql.jdbc.AutoSave;
 import org.postgresql.jdbc.PreferQueryMode;
@@ -137,6 +138,11 @@ public interface PGConnection {
    * @since 8.0
    */
   void addDataType(String type, Class<? extends PGobject> klass) throws SQLException;
+
+  /**
+   * Добавить новый тип данных с указанием способа конвертации
+   **/
+  void addDataType(JdbcConverter<?> typeConverter);
 
   /**
    * Set the default statement reuse threshold before enabling server-side prepare. See

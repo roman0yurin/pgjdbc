@@ -11,10 +11,11 @@ import org.postgresql.core.Oid;
 import org.postgresql.core.QueryExecutor;
 import org.postgresql.core.ServerVersion;
 import org.postgresql.core.TypeInfo;
-import org.postgresql.util.GT;
-import org.postgresql.util.PGobject;
-import org.postgresql.util.PSQLException;
-import org.postgresql.util.PSQLState;
+import org.postgresql.core.c60.JdbcBinaryConverter;
+import org.postgresql.core.c60.JdbcConverter;
+import org.postgresql.core.c60.ReflectionBinaryJdbcConverter;
+import org.postgresql.core.c60.ReflectionJdbcConverter;
+import org.postgresql.util.*;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -40,7 +41,7 @@ public class TypeInfoCache implements TypeInfo {
   private Map<String, Integer> _pgNameToOid;
 
   // pgname (String) -> extension pgobject (Class)
-  private Map<String, Class<? extends PGobject>> _pgNameToPgObject;
+  private Map<String, JdbcConverter<?>> _pgNameToPgObject;
 
   // type array oid -> base type's oid
   private Map<Integer, Integer> _pgArrayToPgType;
@@ -117,7 +118,7 @@ public class TypeInfoCache implements TypeInfo {
     _oidToPgName = new HashMap<Integer, String>();
     _pgNameToOid = new HashMap<String, Integer>();
     _pgNameToJavaClass = new HashMap<String, String>();
-    _pgNameToPgObject = new HashMap<String, Class<? extends PGobject>>();
+    _pgNameToPgObject = new HashMap<String, JdbcConverter<?>>();
     _pgArrayToPgType = new HashMap<Integer, Integer>();
     _arrayOidToDelimiter = new HashMap<Integer, Character>();
 
@@ -167,10 +168,17 @@ public class TypeInfoCache implements TypeInfo {
   }
 
 
-  public synchronized void addDataType(String type, Class<? extends PGobject> klass)
-      throws SQLException {
-    _pgNameToPgObject.put(type, klass);
+  public synchronized void addDataType(String type, Class<? extends PGobject> klass) throws SQLException {
+    if(PGBinaryObject.class.isAssignableFrom(klass))
+      _pgNameToPgObject.put(type, new ReflectionBinaryJdbcConverter(type, klass));
+    else
+      _pgNameToPgObject.put(type, new ReflectionJdbcConverter(type, klass));
     _pgNameToJavaClass.put(type, klass.getName());
+  }
+
+  @Override
+  public void addDataType(JdbcConverter<?> conv) {
+    _pgNameToPgObject.put(conv.pgType(), conv);
   }
 
   public Iterator<String> getPGTypeNamesWithSQLTypes() {
@@ -551,7 +559,7 @@ public class TypeInfoCache implements TypeInfo {
     return pgType;
   }
 
-  public synchronized Class<? extends PGobject> getPGobject(String type) {
+  public synchronized JdbcConverter<?> getPGobject(String type) {
     return _pgNameToPgObject.get(type);
   }
 

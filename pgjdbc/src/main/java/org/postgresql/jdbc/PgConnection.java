@@ -26,6 +26,8 @@ import org.postgresql.core.TransactionState;
 import org.postgresql.core.TypeInfo;
 import org.postgresql.core.Utils;
 import org.postgresql.core.Version;
+import org.postgresql.core.c60.JdbcBinaryConverter;
+import org.postgresql.core.c60.JdbcConverter;
 import org.postgresql.fastpath.Fastpath;
 import org.postgresql.largeobject.LargeObjectManager;
 import org.postgresql.replication.PGReplicationConnection;
@@ -549,14 +551,14 @@ public class PgConnection implements BaseConnection {
       }
     }
 
-    PGobject obj = null;
+    Object obj = null;
 
     if (LOGGER.isLoggable(Level.FINEST)) {
       LOGGER.log(Level.FINEST, "Constructing object from type={0} value=<{1}>", new Object[]{type, value});
     }
 
     try {
-      Class<? extends PGobject> klass = _typeCache.getPGobject(type);
+      JdbcConverter conv = _typeCache.getPGobject(type);
 
       // If className is not null, then try to instantiate it,
       // It must be basetype PGobject
@@ -564,21 +566,18 @@ public class PgConnection implements BaseConnection {
       // This is used to implement the org.postgresql unique types (like lseg,
       // point, etc).
 
-      if (klass != null) {
-        obj = klass.newInstance();
-        obj.setType(type);
-        if (byteValue != null && obj instanceof PGBinaryObject) {
-          PGBinaryObject binObj = (PGBinaryObject) obj;
-          binObj.setByteValue(byteValue, 0);
+      if (conv != null) {
+        if (byteValue != null && conv instanceof JdbcBinaryConverter) {
+          obj = ((JdbcBinaryConverter)conv).convertFromBinary(byteValue, 0);
         } else {
-          obj.setValue(value);
+          obj = conv.convertFromText(value);
         }
       } else {
         // If className is null, then the type is unknown.
         // so return a PGobject with the type set, and the value set
         obj = new PGobject();
-        obj.setType(type);
-        obj.setValue(value);
+        ((PGobject)obj).setType(type);
+        ((PGobject)obj).setValue(value);
       }
 
       return obj;
@@ -612,6 +611,16 @@ public class PgConnection implements BaseConnection {
   public void addDataType(String type, Class<? extends PGobject> klass) throws SQLException {
     checkClosed();
     _typeCache.addDataType(type, klass);
+  }
+
+  @Override
+  public void addDataType(JdbcConverter<?> typeConverter) {
+    try {
+      checkClosed();
+      _typeCache.addDataType(typeConverter);
+    }catch (Exception ex){
+      throw new RuntimeException("Ошибка при настройке подключения к БД", ex);
+    }
   }
 
   // This initialises the objectTypes hash map
