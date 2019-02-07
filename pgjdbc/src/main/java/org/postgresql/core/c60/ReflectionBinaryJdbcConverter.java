@@ -1,5 +1,7 @@
 package org.postgresql.core.c60;
 
+import org.postgresql.PGConnection;
+import org.postgresql.jdbc.PgConnection;
 import org.postgresql.util.PGBinaryObject;
 import org.postgresql.util.PGobject;
 
@@ -13,7 +15,7 @@ public class ReflectionBinaryJdbcConverter extends ReflectionJdbcConverter imple
 	}
 
 	@Override
-	public PGobject convertFromBinary(byte[] buffer, int offset) {
+	public PGobject convertFromBinary(byte[] buffer, int offset, PGConnection conn) {
 		try {
 			PGobject bo = cls.newInstance();
 			bo.setType(pgType());
@@ -25,12 +27,12 @@ public class ReflectionBinaryJdbcConverter extends ReflectionJdbcConverter imple
 	}
 
 	@Override
-	public int binaryLength(PGobject value) {
+	public int binaryLength(PGobject value, PGConnection conn) {
 		return ((PGBinaryObject)value).lengthInBytes();
 	}
 
 	@Override
-	public void convertToBinary(PGobject value, byte[] buffer, int offset) {
+	public void convertToBinary(PGobject value, byte[] buffer, int offset, PGConnection conn) {
 		((PGBinaryObject)value).toBytes(buffer, offset);
 	}
 }

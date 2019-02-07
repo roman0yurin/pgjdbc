@@ -1,6 +1,6 @@
 package org.postgresql.core.c60;
 
-import org.postgresql.util.PGobject;
+import org.postgresql.PGConnection;
 
 /**
  * Обеспечивает конвертацию данных определенного типа (с точки зрения Postgres) между уровнем Java и Postgres.
@@ -14,8 +14,8 @@ public interface JdbcConverter<JAVA_TYPE> {
 	String pgType();
 
 	/**Принять значение из БД для данного типа данных в текстовом формате**/
-	JAVA_TYPE convertFromText(String textValue);
+	JAVA_TYPE convertFromText(String textValue, PGConnection conn);
 
 	/**Сериализовать значение для БД в текстовый формат**/
-	String convertToText(JAVA_TYPE value);
+	String convertToText(JAVA_TYPE value, PGConnection conn);
 }

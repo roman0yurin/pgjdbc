@@ -568,9 +568,9 @@ public class PgConnection implements BaseConnection {
 
       if (conv != null) {
         if (byteValue != null && conv instanceof JdbcBinaryConverter) {
-          obj = ((JdbcBinaryConverter)conv).convertFromBinary(byteValue, 0);
+          obj = ((JdbcBinaryConverter)conv).convertFromBinary(byteValue, 0, this);
         } else {
-          obj = conv.convertFromText(value);
+          obj = conv.convertFromText(value, this);
         }
       } else {
         // If className is null, then the type is unknown.

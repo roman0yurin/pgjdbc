@@ -1,5 +1,7 @@
 package org.postgresql.core.c60;
 
+import org.postgresql.PGConnection;
+import org.postgresql.jdbc.PgConnection;
 import org.postgresql.util.PGobject;
 
 /**
@@ -22,7 +24,7 @@ public class ReflectionJdbcConverter implements JdbcConverter<PGobject>{
 	}
 
 	@Override
-	public PGobject convertFromText(String textValue) {
+	public PGobject convertFromText(String textValue, PGConnection conn) {
 		try {
 			PGobject pGobject = cls.newInstance();
 			pGobject.setType(tp);
@@ -34,7 +36,7 @@ public class ReflectionJdbcConverter implements JdbcConverter<PGobject>{
 	}
 
 	@Override
-	public String convertToText(PGobject value) {
+	public String convertToText(PGobject value, PGConnection conn) {
 		return  value != null ? value.getValue(): null;
 	}
 }
