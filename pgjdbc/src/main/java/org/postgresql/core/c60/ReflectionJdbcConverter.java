@@ -39,4 +39,9 @@ public class ReflectionJdbcConverter implements JdbcConverter<PGobject>{
 	public String convertToText(PGobject value, PGConnection conn) {
 		return  value != null ? value.getValue(): null;
 	}
+
+	@Override
+	public Class<PGobject> getReturnType() {
+		return (Class)cls;
+	}
 }

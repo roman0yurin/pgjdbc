@@ -5,6 +5,7 @@
 
 package org.postgresql.jdbc;
 
+import geo.controller.core.utils.TextUtils;
 import org.postgresql.Driver;
 import org.postgresql.PGNotification;
 import org.postgresql.PGProperty;
@@ -526,6 +527,22 @@ public class PgConnection implements BaseConnection {
   // This holds a reference to the LargeObject API if already open
   private LargeObjectManager largeobject = null;
 
+  public String simplifySqlTypeName(String sqlType){
+    String tpName;
+    if(sqlType.startsWith("public."))
+      tpName = sqlType.substring(7, sqlType.length());
+    else if(sqlType.startsWith("\"public\"."))
+      tpName = sqlType.substring(9, sqlType.length());
+    else
+      tpName = sqlType;
+
+    if(tpName.startsWith("\"")){
+      assert tpName.endsWith("\"") : "Некоррректное название типа";
+      tpName = tpName.substring(1, tpName.length() - 1);
+    }
+    return tpName;
+  }
+
   /*
    * This method is used internally to return an object based around org.postgresql's more unique
    * data types.
@@ -558,7 +575,7 @@ public class PgConnection implements BaseConnection {
     }
 
     try {
-      JdbcConverter conv = _typeCache.getPGobject(type);
+      JdbcConverter conv = _typeCache.getPGobject(simplifySqlTypeName(type));
 
       // If className is not null, then try to instantiate it,
       // It must be basetype PGobject
@@ -1737,5 +1754,10 @@ public class PgConnection implements BaseConnection {
       // If composite query is given, just ignore "generated keys" arguments
     }
     return ps;
+  }
+
+  @Override
+  public BaseConnection getBaseConnection() {
+    return this;
   }
 }

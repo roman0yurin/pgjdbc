@@ -10,6 +10,8 @@ import org.postgresql.core.BaseStatement;
 import org.postgresql.core.Encoding;
 import org.postgresql.core.Field;
 import org.postgresql.core.Oid;
+import org.postgresql.core.c60.JdbcBinaryConverter;
+import org.postgresql.core.c60.JdbcConverter;
 import org.postgresql.jdbc2.ArrayAssistant;
 import org.postgresql.jdbc2.ArrayAssistantRegistry;
 import org.postgresql.util.ByteConverter;
@@ -21,10 +23,10 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.sql.Types;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.time.LocalTime;
+import java.util.*;
 import java.util.logging.Level;
 
 /**
@@ -45,6 +47,9 @@ public class PgArray implements java.sql.Array {
     ArrayAssistantRegistry.register(Oid.UUID, new UUIDArrayAssistant());
     ArrayAssistantRegistry.register(Oid.UUID_ARRAY, new UUIDArrayAssistant());
   }
+
+
+  static final long pgZeroTime = new Date(100, 0, 1).getTime();
 
   /**
    * Array list implementation specific for storing PG array elements.
@@ -251,10 +256,31 @@ public class PgArray implements java.sql.Array {
           case Oid.BOOL:
             arr[i] = ByteConverter.bool(fieldBytes, pos);
             break;
+					case Oid.DATE:
+						byte[] subBuf = new byte[4];
+						Calendar cal = getDefaultCalendar();
+						TimeZone tz = cal != null ? cal.getTimeZone() : null;
+						System.arraycopy(fieldBytes, pos, subBuf, 0, 4);
+						arr[i] = connection.getTimestampUtils().toDateBin(tz, subBuf);
+						break;
+					case Oid.TIMESTAMPTZ:
+					case Oid.TIMESTAMP:
+						long l = ByteConverter.int8(fieldBytes, pos);
+						arr[i] = new Timestamp(l / 1000 + pgZeroTime);
+						break;
+					case Oid.TIME:
+						long lt = ByteConverter.int8(fieldBytes, pos);
+						arr[i] = LocalTime.ofNanoOfDay((lt + pgZeroTime * 1000) * 1000);
+						break;
           default:
-            ArrayAssistant arrAssistant = ArrayAssistantRegistry.getAssistant(elementOid);
-            if (arrAssistant != null) {
-              arr[i] = arrAssistant.buildElement(fieldBytes, pos, len);
+            JdbcConverter<?> convert = connection.getTypeInfo().getConverterByOid(elementOid);
+            if(convert instanceof JdbcBinaryConverter){
+              arr[i] = ((JdbcBinaryConverter)convert).convertFromBinary(fieldBytes, pos, connection);
+            }else{
+              ArrayAssistant arrAssistant = ArrayAssistantRegistry.getAssistant(elementOid);
+              if (arrAssistant != null) {
+                arr[i] = arrAssistant.buildElement(fieldBytes, pos, len);
+              }
             }
         }
         pos += len;
@@ -395,10 +421,22 @@ public class PgArray implements java.sql.Array {
         return String.class;
       case Oid.BOOL:
         return Boolean.class;
+      case Oid.TIME:
+        return LocalTime.class;
+      case Oid.DATE:
+        return java.sql.Date.class;
+      case Oid.TIMESTAMP:
+      case Oid.TIMESTAMPTZ:
+        return java.sql.Timestamp.class;
       default:
         ArrayAssistant arrElemBuilder = ArrayAssistantRegistry.getAssistant(oid);
         if (arrElemBuilder != null) {
           return arrElemBuilder.baseType();
+        }
+
+        Class returnClass = connection.getTypeInfo().javaClass(oid);
+        if(returnClass != null){
+          return returnClass;
         }
 
         throw org.postgresql.Driver.notImplemented(this.getClass(), "readBinaryArray(data,oid)");
@@ -979,4 +1017,20 @@ public class PgArray implements java.sql.Array {
     fieldBytes = null;
     arrayList = null;
   }
+
+  private static final ThreadLocal<Calendar> calendar = new ThreadLocal<>();
+
+	private Calendar getDefaultCalendar() {
+		Calendar cld = PgArray.calendar.get();
+		if(cld == null){
+			TimestampUtils timestampUtils = connection.getTimestampUtils();
+			if (timestampUtils.hasFastDefaultTimeZone()) {
+				cld = timestampUtils.getSharedCalendar(null);
+			}else{
+				cld = timestampUtils.getSharedCalendar(null);
+			}
+			calendar.set(cld);
+		}
+		return cld;
+	}
 }

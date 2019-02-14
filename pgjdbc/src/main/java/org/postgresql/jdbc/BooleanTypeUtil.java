@@ -18,7 +18,7 @@ import java.util.logging.Logger;
  * <p>Based on values accepted by the PostgreSQL server:
  * https://www.postgresql.org/docs/current/static/datatype-boolean.html</p>
  */
-class BooleanTypeUtil {
+public class BooleanTypeUtil {
 
   private static final Logger LOGGER = Logger.getLogger(BooleanTypeUtil.class.getName());
 
@@ -32,7 +32,7 @@ class BooleanTypeUtil {
    * @return boolean value corresponding to the cast of the object
    * @throws PSQLException PSQLState.CANNOT_COERCE
    */
-  static boolean castToBoolean(final Object in) throws PSQLException {
+  public static boolean castToBoolean(final Object in) throws PSQLException {
     if (LOGGER.isLoggable(Level.FINE)) {
       LOGGER.log(Level.FINE, "Cast to boolean: \"{0}\"", String.valueOf(in));
     }
@@ -51,7 +51,7 @@ class BooleanTypeUtil {
     throw new PSQLException("Cannot cast to boolean", PSQLState.CANNOT_COERCE);
   }
 
-  private static boolean fromString(final String strval) throws PSQLException {
+  public static boolean fromString(final String strval) throws PSQLException {
     // Leading or trailing whitespace is ignored, and case does not matter.
     final String val = strval.trim();
     if ("1".equals(val) || "true".equalsIgnoreCase(val)
@@ -67,7 +67,7 @@ class BooleanTypeUtil {
     throw cannotCoerceException(strval);
   }
 
-  private static boolean fromCharacter(final Character charval) throws PSQLException {
+  public static boolean fromCharacter(final Character charval) throws PSQLException {
     if ('1' == charval || 't' == charval || 'T' == charval
         || 'y' == charval || 'Y' == charval) {
       return true;
@@ -79,7 +79,7 @@ class BooleanTypeUtil {
     throw cannotCoerceException(charval);
   }
 
-  private static boolean fromNumber(final Number numval) throws PSQLException {
+  public static boolean fromNumber(final Number numval) throws PSQLException {
     // Handles BigDecimal, Byte, Short, Integer, Long Float, Double
     // based on the widening primitive conversions.
     final double value = numval.doubleValue();

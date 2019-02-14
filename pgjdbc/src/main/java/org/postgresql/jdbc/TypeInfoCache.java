@@ -42,6 +42,7 @@ public class TypeInfoCache implements TypeInfo {
 
   // pgname (String) -> extension pgobject (Class)
   private Map<String, JdbcConverter<?>> _pgNameToPgObject;
+  private Map<Integer, JdbcConverter<?>> _pgOidToPgObject;
 
   // type array oid -> base type's oid
   private Map<Integer, Integer> _pgArrayToPgType;
@@ -119,6 +120,7 @@ public class TypeInfoCache implements TypeInfo {
     _pgNameToOid = new HashMap<String, Integer>();
     _pgNameToJavaClass = new HashMap<String, String>();
     _pgNameToPgObject = new HashMap<String, JdbcConverter<?>>();
+    _pgOidToPgObject = new HashMap<Integer, JdbcConverter<?>>();
     _pgArrayToPgType = new HashMap<Integer, Integer>();
     _arrayOidToDelimiter = new HashMap<Integer, Character>();
 
@@ -169,16 +171,26 @@ public class TypeInfoCache implements TypeInfo {
 
 
   public synchronized void addDataType(String type, Class<? extends PGobject> klass) throws SQLException {
-    if(PGBinaryObject.class.isAssignableFrom(klass))
-      _pgNameToPgObject.put(type, new ReflectionBinaryJdbcConverter(type, klass));
-    else
-      _pgNameToPgObject.put(type, new ReflectionJdbcConverter(type, klass));
+    if(PGBinaryObject.class.isAssignableFrom(klass)) {
+      ReflectionBinaryJdbcConverter conv = new ReflectionBinaryJdbcConverter(type, klass);
+      _pgOidToPgObject.put(getPGType(type), conv);
+      _pgNameToPgObject.put(type, conv);
+    }else {
+      ReflectionJdbcConverter conv = new ReflectionJdbcConverter(type, klass);
+      _pgOidToPgObject.put(getPGType(type), conv);
+      _pgNameToPgObject.put(type, conv);
+    }
     _pgNameToJavaClass.put(type, klass.getName());
   }
 
   @Override
   public void addDataType(JdbcConverter<?> conv) {
     _pgNameToPgObject.put(conv.pgType(), conv);
+    try {
+      _pgOidToPgObject.put(getPGType(conv.pgType()), conv);
+    }catch (Exception ex){
+      throw new RuntimeException("Ошибка при внесении конвертера.", ex);
+    }
   }
 
   public Iterator<String> getPGTypeNamesWithSQLTypes() {
@@ -379,16 +391,21 @@ public class TypeInfoCache implements TypeInfo {
       throw new PSQLException(GT.tr("No results were returned by the query."), PSQLState.NO_DATA);
     }
 
-    oid = Oid.UNSPECIFIED;
-    ResultSet rs = oidStatement.getResultSet();
-    if (rs.next()) {
-      oid = (int) rs.getLong(1);
-      String internalName = rs.getString(2);
-      _oidToPgName.put(oid, internalName);
-      _pgNameToOid.put(internalName, oid);
+    if(_pgNameToPgObject.containsKey(pgTypeName))
+      oid = _pgNameToPgObject.get(pgTypeName).oid();
+
+    if(oid == null) {
+      oid = Oid.UNSPECIFIED;
+      ResultSet rs = oidStatement.getResultSet();
+      if (rs.next()) {
+        oid = (int) rs.getLong(1);
+        String internalName = rs.getString(2);
+        _oidToPgName.put(oid, internalName);
+        _pgNameToOid.put(internalName, oid);
+      }
+      rs.close();
     }
     _pgNameToOid.put(pgTypeName, oid);
-    rs.close();
 
     return oid;
   }
@@ -561,6 +578,20 @@ public class TypeInfoCache implements TypeInfo {
 
   public synchronized JdbcConverter<?> getPGobject(String type) {
     return _pgNameToPgObject.get(type);
+  }
+
+  @Override
+  public JdbcConverter<?> getConverterByOid(int oid) {
+    return _pgOidToPgObject.get(oid);
+  }
+
+  @Override
+  public Class<?> javaClass(int oid) {
+    JdbcConverter<?> conv = getConverterByOid(oid);
+    if(conv != null )
+      return conv.getReturnType();
+    else
+      return null;
   }
 
   public synchronized String getJavaClass(int oid) throws SQLException {

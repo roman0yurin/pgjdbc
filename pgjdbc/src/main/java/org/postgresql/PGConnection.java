@@ -6,6 +6,7 @@
 package org.postgresql;
 
 import org.postgresql.copy.CopyManager;
+import org.postgresql.core.BaseConnection;
 import org.postgresql.core.c60.JdbcConverter;
 import org.postgresql.fastpath.Fastpath;
 import org.postgresql.jdbc.AutoSave;
@@ -242,4 +243,23 @@ public interface PGConnection {
    * @return replication API for the current connection
    */
   PGReplicationConnection getReplicationAPI();
+
+  /*
+   * This method is used internally to return an object based around org.postgresql's more unique
+   * data types.
+   *
+   * <p>It uses an internal HashMap to get the handling class. If the type is not supported, then an
+   * instance of org.postgresql.util.PGobject is returned.
+   *
+   * You can use the getValue() or setValue() methods to handle the returned object. Custom objects
+   * can have their own methods.
+   *
+   * @return PGobject for this type, and set to value
+   *
+   * @exception SQLException if value is not correct for this type
+   */
+  public Object getObject(String type, String value, byte[] byteValue) throws SQLException;
+
+  /**Внутренняя реализация подключения для работы на уровне драйвера JDBC**/
+  BaseConnection getBaseConnection();
 }

@@ -7,6 +7,7 @@ package org.postgresql.core;
 
 import org.postgresql.core.c60.JdbcConverter;
 import org.postgresql.util.PGobject;
+import scala.collection.JavaConverters;
 
 import java.sql.SQLException;
 import java.util.Iterator;
@@ -90,6 +91,12 @@ public interface TypeInfo {
   Iterator<String> getPGTypeNamesWithSQLTypes();
 
   JdbcConverter<?> getPGobject(String type);
+
+  /**Вернуть конвертер данных по идентификатору типа**/
+  JdbcConverter<?> getConverterByOid(int oid);
+
+  /**Тип элемента на стороне приложения по идентификатору SQL**/
+  Class<?> javaClass(int oid);
 
   String getJavaClass(int oid) throws SQLException;
 
