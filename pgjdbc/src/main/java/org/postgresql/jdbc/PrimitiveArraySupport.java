@@ -77,6 +77,7 @@ public abstract class PrimitiveArraySupport<A> {
       ByteConverter.int4(bytes, 8, Oid.INT8);
       // length
       ByteConverter.int4(bytes, 12, array.length);
+      ByteConverter.int4(bytes, 16, 1); //Начальный индекс измерения, 1 типичое значение
 
       int idx = 20;
       for (int i = 0; i < array.length; ++i) {
@@ -138,7 +139,7 @@ public abstract class PrimitiveArraySupport<A> {
       ByteConverter.int4(bytes, 8, Oid.INT4);
       // length
       ByteConverter.int4(bytes, 12, array.length);
-
+      ByteConverter.int4(bytes, 16, 1); //Начальный индекс измерения, 1 типичое значение
       int idx = 20;
       for (int i = 0; i < array.length; ++i) {
         bytes[idx + 3] = 4;
@@ -199,6 +200,7 @@ public abstract class PrimitiveArraySupport<A> {
       ByteConverter.int4(bytes, 8, Oid.INT2);
       // length
       ByteConverter.int4(bytes, 12, array.length);
+      ByteConverter.int4(bytes, 16, 1); //Начальный индекс измерения, 1 типичое значение
 
       int idx = 20;
       for (int i = 0; i < array.length; ++i) {
@@ -264,6 +266,7 @@ public abstract class PrimitiveArraySupport<A> {
       ByteConverter.int4(bytes, 8, Oid.FLOAT8);
       // length
       ByteConverter.int4(bytes, 12, array.length);
+      ByteConverter.int4(bytes, 16, 1); //Начальный индекс измерения, 1 типичое значение
 
       int idx = 20;
       for (int i = 0; i < array.length; ++i) {
@@ -329,6 +332,7 @@ public abstract class PrimitiveArraySupport<A> {
       ByteConverter.int4(bytes, 8, Oid.FLOAT4);
       // length
       ByteConverter.int4(bytes, 12, array.length);
+      ByteConverter.int4(bytes, 16, 1); //Начальный индекс измерения, 1 типичое значение
 
       int idx = 20;
       for (int i = 0; i < array.length; ++i) {
@@ -393,6 +397,7 @@ public abstract class PrimitiveArraySupport<A> {
       ByteConverter.int4(bytes, 8, Oid.BOOL);
       // length
       ByteConverter.int4(bytes, 12, array.length);
+      ByteConverter.int4(bytes, 16, 1); //Начальный индекс измерения, 1 типичое значение
 
       int idx = 20;
       for (int i = 0; i < array.length; ++i) {
