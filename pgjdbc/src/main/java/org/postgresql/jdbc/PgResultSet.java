@@ -688,16 +688,18 @@ public class PgResultSet implements ResultSet, org.postgresql.PGRefCursorResultS
 
 
   public int getRow() throws SQLException {
-    checkClosed();
+    //checkClosed();
 
     if (onInsertRow) {
       return 0;
     }
 
-    final int rows_size = rows.size();
+    if(rows != null) {
+      final int rows_size = rows.size();
 
-    if (current_row < 0 || current_row >= rows_size) {
-      return 0;
+      if (current_row < 0 || current_row >= rows_size) {
+        return 0;
+      }
     }
 
     return row_offset + current_row + 1;

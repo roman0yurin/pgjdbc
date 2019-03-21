@@ -6,6 +6,8 @@
 
 package org.postgresql.core.v3;
 
+import geo.model.core_decl.func.IParam2Func;
+import geo.model.core_decl.func.IParamFunc;
 import org.postgresql.core.Oid;
 import org.postgresql.core.PGStream;
 import org.postgresql.core.ParameterList;
@@ -30,7 +32,12 @@ import java.util.Arrays;
  *
  * @author Oliver Jowett (oliver@opencloud.com)
  */
-class SimpleParameterList implements V3ParameterList {
+public class SimpleParameterList implements V3ParameterList {
+
+  /**Функция, обеспечивает перевод JDBC значения из бинарного формата в текстовый**/
+  public static IJdbcParam2Function<Integer, byte[], String> FromBinary2String = (oid, content) ->{
+    return "?";
+  };
 
   private static final byte IN = 1;
   private static final byte OUT = 2;
@@ -209,7 +216,7 @@ class SimpleParameterList implements V3ParameterList {
           pgBox.setByteValue((byte[]) paramValues[index], 0);
           return "'" + pgBox.toString() + "'::box";
       }
-      return "?";
+      return FromBinary2String.invoke(paramTypes[index], (byte[]) paramValues[index]);
     } else {
       String param = paramValues[index].toString();
 

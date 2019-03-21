@@ -391,7 +391,7 @@ public class PGPooledConnection implements PooledConnection {
       // From Object
       if (method.getDeclaringClass() == Object.class) {
         if (methodName.equals("toString")) {
-          return "Pooled statement wrapping physical statement " + st;
+          return st.toString();
         }
         if (methodName.equals("hashCode")) {
           return System.identityHashCode(proxy);
