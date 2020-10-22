@@ -202,7 +202,6 @@ public class TypeInfoCache implements TypeInfo {
   }
 
   public synchronized int getSQLType(String pgTypeName) throws SQLException {
-    assert pgTypeName != null;
     if (pgTypeName.endsWith("[]")) {
       return Types.ARRAY;
     }
