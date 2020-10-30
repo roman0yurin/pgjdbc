@@ -27,6 +27,8 @@ import javax.sql.ConnectionEventListener;
 import javax.sql.PooledConnection;
 import javax.sql.StatementEventListener;
 
+import java.util.concurrent.atomic.AtomicLong;
+
 /**
  * PostgreSQL implementation of the PooledConnection interface. This shouldn't be used directly, as
  * the pooling client should just interact with the ConnectionPool instead.
@@ -41,6 +43,7 @@ public class PGPooledConnection implements PooledConnection {
   private ConnectionHandler last;
   private final boolean autoCommit;
   private final boolean isXA;
+  private static AtomicLong executeCounter = new AtomicLong(0L);
 
   /**
    * Creates a new PooledConnection representing the specified physical connection.
@@ -241,6 +244,10 @@ public class PGPooledConnection implements PooledConnection {
     fireConnectionFatalError(e);
   }
 
+  public static long snapCounter() {
+    return executeCounter.getAndSet(0L);
+  }
+
   /**
    * Instead of declaring a class implementing Connection, which would have to be updated for every
    * JDK rev, use a dynamic proxy to handle all calls through the Connection interface. This is the
@@ -422,6 +429,8 @@ public class PGPooledConnection implements PooledConnection {
       if (methodName.equals("getConnection")) {
         return con.getProxy(); // the proxied connection, not a physical connection
       }
+      if (methodName.startsWith("execute"))
+        executeCounter.incrementAndGet();
 
       // Delegate the call to the proxied Statement.
       try {
