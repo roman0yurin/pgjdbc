@@ -464,7 +464,10 @@ public class TypeInfoCache implements TypeInfo {
 
   public int getPGArrayType(String elementTypeName) throws SQLException {
     elementTypeName = getTypeForAlias(elementTypeName);
-    return getPGType(elementTypeName + "[]");
+    int oid = getPGType(elementTypeName + "[]");
+    if(oid == Oid.UNSPECIFIED) //В некоторых случаях тип массива в кеше берется в ковычки, и по простому имени не находится
+      oid = getPGType( "\""+elementTypeName + "\"" + "[]");
+    return oid;
   }
 
   /**

@@ -7,6 +7,7 @@
 package org.postgresql.core;
 
 import java.sql.SQLException;
+import java.sql.SQLTimeoutException;
 import java.sql.SQLWarning;
 import java.util.List;
 
@@ -60,7 +61,10 @@ public class ResultHandlerBase implements ResultHandler {
   @Override
   public void handleCompletion() throws SQLException {
     if (firstException != null) {
-      throw firstException;
+      if("57014".equals(firstException.getSQLState()))//Для таймаута нужен особый вид исключения, так как таймаут это особы случай, а не просто ошибка в запросе.
+        throw new SQLTimeoutException(firstException);
+      else
+        throw firstException;
     }
   }
 
