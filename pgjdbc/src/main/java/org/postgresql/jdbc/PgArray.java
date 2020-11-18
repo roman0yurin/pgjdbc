@@ -20,6 +20,7 @@ import org.postgresql.util.PSQLException;
 import org.postgresql.util.PSQLState;
 
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -811,16 +812,24 @@ public class PgArray implements java.sql.Array {
             : (v == null ? null : arrAssistant.buildElement((String) v));
       }
     } else if (dims == 1) {
-      Object[] oa = new Object[count];
+      Class baseCls = Object.class;
       String typeName = getBaseTypeName();
+      //Пытаемся определить более точный класс
+      JdbcConverter conv = connection instanceof PgConnection ?
+              connection.getTypeInfo().getPGobject(((PgConnection)connection).simplifySqlTypeName(typeName)) : null;
+
+      if(conv != null)
+        baseCls = conv.getReturnType();
+      Object oa = Array.newInstance(baseCls, count);
+
       for (; count > 0; count--) {
         Object v = input.get(index++);
         if (v instanceof String) {
-          oa[length++] = connection.getObject(typeName, (String) v, null);
+          Array.set(oa, length++, connection.getObject(typeName, (String) v, null));
         } else if (v instanceof byte[]) {
-          oa[length++] = connection.getObject(typeName, null, (byte[]) v);
+          Array.set(oa, length++, connection.getObject(typeName, null, (byte[]) v));
         } else if (v == null) {
-          oa[length++] = null;
+          Array.set(oa, length++,  null);
         } else {
           throw org.postgresql.Driver.notImplemented(this.getClass(), "getArrayImpl(long,int,Map)");
         }
